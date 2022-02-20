@@ -1,14 +1,14 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const following = require('../models/follows');
-const T = require('../twit');
-const { startStream, stopStream } = require("../common");
+const T = require('../services/twit');
+const { startStream, stopStream, createRole } = require("../common");
 
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('follow')
-        .setDescription('Follow a cunt').addStringOption(option =>
+        .setDescription('Follow account').addStringOption(option =>
             option.setName('handle')
-                .setDescription('The cunt')
+                .setDescription('Twitter handle')
                 .setRequired(true)),
     async execute(interaction) {
 
@@ -23,6 +23,7 @@ module.exports = {
                             handle: response[0].screen_name,
                         });
                         following.sync(/*{ force: true }*/);
+                        await createRole(response[0].screen_name);
                         stopStream();
                         startStream();
                         return interaction.reply('Followed https://twitter.com/' + response[0].screen_name);
@@ -41,3 +42,4 @@ module.exports = {
         }
     },
 };
+

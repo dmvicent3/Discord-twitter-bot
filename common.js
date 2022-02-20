@@ -12,6 +12,33 @@ function isReply(tweet) {
         return true
 }
 
+async function getRoleId(handle) {
+    const getGuild = await client.guilds.fetch();
+    const guildId = getGuild.map(t => t.id);
+    let guild = client.guilds.cache.get(guildId[0]);
+
+    function toJson(item) {
+        return { name: item.name, id: item.id };
+    }
+    const roles = guild.roles.cache.map(r => toJson(r));
+
+    index = roles.findIndex(t => t.name === handle);
+    console.log(roles[index])
+    return roles[index].id;
+}
+
+async function roleExists(handle) {
+    const getGuild = await client.guilds.fetch();
+    const guildId = getGuild.map(t => t.id);
+    let guild = client.guilds.cache.get(guildId[0]);
+
+    if (guild.roles.cache.some(r => [handle].includes(r.name))) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
 async function getChannelId(handle) {
     console.log(handle)
     // equivalent to: SELECT * FROM tags WHERE name = 'tagName' LIMIT 1;
@@ -69,11 +96,11 @@ module.exports = {
                 if (!isReply(tweet)) {
                     console.log(tweet);
                     if (!tweet.retweeted_status) {
-                        var url = "https://twitter.com/" + tweet.user.screen_name + "/status/" + tweet.id_str;
+                        var url = "<@&" + await getRoleId(tweet.user.screen_name) + "> tweeted https://twitter.com/" + tweet.user.screen_name + "/status/" + tweet.id_str;
                     } else {
                         var url = "@" + tweet.user.screen_name + " retweeted: https://twitter.com/" + tweet.retweeted_status.user.screen_name + "/status/" + tweet.retweeted_status.id_str;
                     }
-                    
+
                     try {
                         const channelId = await getChannelId(tweet.user.screen_name);
                         let channel = client.channels.fetch(BigInt(channelId)).then(channel => {
@@ -91,5 +118,18 @@ module.exports = {
     stopStream: function stopStream() {
         console.log('Stopping the Stream');
         stream.stop();
+    },
+    createRole: async function createRole(handle) {
+        const getGuild = await client.guilds.fetch();
+        const guildId = getGuild.map(t => t.id);
+        let guild = client.guilds.cache.get(guildId[0]);
+        console.log(guild)
+        guild.roles.create({
+            name: handle,
+            color: 'BLUE',
+            reason: 'idk',
+        })
+            .then(console.log)
+            .catch(console.error);
     },
 };

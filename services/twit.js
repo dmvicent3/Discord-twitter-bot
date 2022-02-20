@@ -1,5 +1,5 @@
 const { consumer_key, consumer_secret,
-	access_token, access_token_secret } = require('./config.json');
+	access_token, access_token_secret } = require('../config.json');
 const Twit = require('twit');
 var T = new Twit({
 	consumer_key: consumer_key,

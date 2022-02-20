@@ -1,0 +1,21 @@
+{
+  "name": "basedbot",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@discordjs/builders": "^0.12.0",
+    "@discordjs/rest": "^0.3.0",
+    "discord-api-types": "^0.26.1",
+    "discord.js": "^13.6.0",
+    "sequelize": "^6.16.2",
+    "sqlite3": "^5.0.2",
+    "twit": "^2.2.11",
+    "twitter": "^1.7.1"
+  },
+  "description": ""
+}

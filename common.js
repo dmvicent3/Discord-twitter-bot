@@ -1,6 +1,6 @@
 const following = require('./models/follows');
 const T = require('./services/twit');
-const client = require('./services/discordjs');
+const { client, getGuild } = require('./services/discordjs');
 
 function isReply(tweet) {
     if ( /*tweet.retweeted_status
@@ -12,25 +12,23 @@ function isReply(tweet) {
         return true
 }
 
-async function getRoleId(handle) {
-    const getGuild = await client.guilds.fetch();
-    const guildId = getGuild.map(t => t.id);
-    let guild = client.guilds.cache.get(guildId[0]);
-
+function getRoles(guild) {
     function toJson(item) {
         return { name: item.name, id: item.id };
     }
-    const roles = guild.roles.cache.map(r => toJson(r));
+    return guild.roles.cache.map(r => toJson(r));
+}
 
+async function getRoleId(handle) {
+    let guild = await getGuild();
+    const roles = getRoles(guild);
     index = roles.findIndex(t => t.name === handle);
-    console.log(roles[index])
+
     return roles[index].id;
 }
 
 async function roleExists(handle) {
-    const getGuild = await client.guilds.fetch();
-    const guildId = getGuild.map(t => t.id);
-    let guild = client.guilds.cache.get(guildId[0]);
+    let guild = await getGuild();
 
     if (guild.roles.cache.some(r => [handle].includes(r.name))) {
         return true;
@@ -40,12 +38,9 @@ async function roleExists(handle) {
 }
 
 async function getChannelId(handle) {
-    console.log(handle)
-    // equivalent to: SELECT * FROM tags WHERE name = 'tagName' LIMIT 1;
     const follow = await following.findOne({ where: { handle: handle } });
 
     if (follow) {
-        //console.log(follow)
         return follow.channelId;
     } else {
         return 0;
@@ -63,7 +58,7 @@ async function getFollowings() {
     const followList = await following.findAll({ attributes: ['twitterId'] });
 
     if (followList.length <= 0) {
-        console.log(123);
+        console.log('No follows found');
         try {
             const follow = following.create({
                 twitterId: 985500940319981568,
@@ -76,7 +71,6 @@ async function getFollowings() {
             console.log(err);
         }
     } else {
-        console.log(321);
         follows = followList.map(t => t.twitterId).join(', ') || '';
     }
     return follows;
@@ -87,18 +81,18 @@ module.exports = {
     startStream: async function startStream() {
         console.log('Starting Stream')
         const follows = await getFollowings();
-        console.log(follows)
+        console.log('Currently following: ' + follows)
         stream = T.stream('statuses/filter', { follow: follows })
 
         stream.on('tweet', async function (tweet) {
             const handles = await getHandles();
             if (handles.includes(tweet.user.screen_name)) {
                 if (!isReply(tweet)) {
-                    console.log(tweet);
+                    console.log('Posted tweet by ' + tweet.user.screen_name);
                     if (!tweet.retweeted_status) {
                         var url = "<@&" + await getRoleId(tweet.user.screen_name) + "> tweeted https://twitter.com/" + tweet.user.screen_name + "/status/" + tweet.id_str;
                     } else {
-                        var url = "@" + tweet.user.screen_name + " retweeted: https://twitter.com/" + tweet.retweeted_status.user.screen_name + "/status/" + tweet.retweeted_status.id_str;
+                        var url = "<@&" + await getRoleId(tweet.user.screen_name) + "> retweeted: https://twitter.com/" + tweet.retweeted_status.user.screen_name + "/status/" + tweet.retweeted_status.id_str;
                     }
 
                     try {
@@ -120,16 +114,23 @@ module.exports = {
         stream.stop();
     },
     createRole: async function createRole(handle) {
-        const getGuild = await client.guilds.fetch();
-        const guildId = getGuild.map(t => t.id);
-        let guild = client.guilds.cache.get(guildId[0]);
-        console.log(guild)
+        let guild = await getGuild();
+
         guild.roles.create({
             name: handle,
             color: 'BLUE',
             reason: 'idk',
         })
-            .then(console.log)
+            .then(console.log('Created role ' + handle))
             .catch(console.error);
     },
+    deleteRole: async function deleteRole(handle) {
+        let guild = await getGuild();
+        const roles = getRoles(guild);
+        index = roles.findIndex(t => t.name === handle);
+
+        guild.roles.delete(roles[index].id, 'The role needed to go')
+            .then(console.log(`Deleted role ${roles[index].name}`))
+            .catch(console.error);
+    }
 };

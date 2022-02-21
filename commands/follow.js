@@ -23,9 +23,11 @@ module.exports = {
                             handle: response[0].screen_name,
                         });
                         following.sync(/*{ force: true }*/);
+                        console.log('Followed ' + response[0].screen_name);
                         await createRole(response[0].screen_name);
                         stopStream();
                         startStream();
+
                         return interaction.reply('Followed https://twitter.com/' + response[0].screen_name);
 
                     } catch (error) {

@@ -1,8 +1,7 @@
 const { token } = require('./config.json');
 const fs = require('fs');
 const following = require('./models/follows');
-const T = require('./services/twit');
-const client = require('./services/discordjs');
+const { client } = require('./services/discordjs');
 const { startStream } = require("./common");
 const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js'));
 
@@ -16,7 +15,6 @@ for (const file of commandFiles) {
 client.on('ready', () => {
 	following.sync(/*{ force: true }*/);
 	console.log(`Logged in as ${client.user.tag}!`);
-
 });
 
 client.login(token);

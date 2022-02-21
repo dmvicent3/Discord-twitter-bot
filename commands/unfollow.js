@@ -16,12 +16,17 @@ module.exports = {
                 if (!rowCount) return interaction.reply('????????????');
 
                 following.sync(/*{ force: true }*/);
-                console.log('Unfollowed '+ handle);
+                console.log('Unfollowed ' + handle);
                 await deleteRole(handle);
                 stopStream();
-                startStream();
-                
-                
+
+                const followCount = await following.count({ attributes: ['twitterId'] });
+                if (followCount > 0) {
+                        startStream();
+                } else {
+                        console.log('No follows found, stopping the stream');
+                }
+
                 return interaction.reply('Unfollowed @' + handle);
         },
 };

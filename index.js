@@ -35,5 +35,10 @@ client.on('interactionCreate', async interaction => {
 });
 
 client.once('ready', async () => {
-	startStream();
+	const followCount = await following.count({ attributes: ['twitterId'] });
+	if (followCount > 0) {
+		startStream();
+	} else {
+		console.log('No follows found, stream can not start');
+	}
 })

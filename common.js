@@ -27,16 +27,6 @@ async function getRoleId(handle) {
     return roles[index].id;
 }
 
-async function roleExists(handle) {
-    let guild = await getGuild();
-
-    if (guild.roles.cache.some(r => [handle].includes(r.name))) {
-        return true;
-    } else {
-        return false;
-    }
-}
-
 async function getChannelId(handle) {
     const follow = await following.findOne({ where: { handle: handle } });
 
@@ -57,22 +47,10 @@ async function getFollowings() {
     let follows = null;
     const followList = await following.findAll({ attributes: ['twitterId'] });
 
-    if (followList.length <= 0) {
-        console.log('No follows found');
-        try {
-            const follow = following.create({
-                twitterId: 985500940319981568,
-                channelId: '275717460316127232',
-                handle: '12x_hy',
-            });
-            following.sync(/*{ force: true }*/);
-            follows = '985500940319981568';
-        } catch (err) {
-            console.log(err);
-        }
-    } else {
+    if (followList.length > 0) {
         follows = followList.map(t => t.twitterId).join(', ') || '';
     }
+
     return follows;
 }
 
@@ -88,7 +66,7 @@ module.exports = {
             const handles = await getHandles();
             if (handles.includes(tweet.user.screen_name)) {
                 if (!isReply(tweet)) {
-                    console.log('Posted tweet by ' + tweet.user.screen_name);
+                    console.log('New Tweet by ' + tweet.user.screen_name);
                     if (!tweet.retweeted_status) {
                         var url = "<@&" + await getRoleId(tweet.user.screen_name) + "> tweeted https://twitter.com/" + tweet.user.screen_name + "/status/" + tweet.id_str;
                     } else {
@@ -110,8 +88,10 @@ module.exports = {
         })
     },
     stopStream: function stopStream() {
-        console.log('Stopping the Stream');
-        stream.stop();
+        if (stream) {
+            console.log('Stopping the Stream');
+            stream.stop();
+        }
     },
     createRole: async function createRole(handle) {
         let guild = await getGuild();
